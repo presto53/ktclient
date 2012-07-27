@@ -11,7 +11,7 @@
 #define MAX_KEY_LEN 1024
 
 int intsock;
-char errbuf[BUF_LEN];
+char errbuf[16];
 char *magicbuf;
 char buf[BUF_LEN];
 struct sockaddr_in sock_in;
@@ -112,7 +112,7 @@ int tycoon_set(int ktsock, char *skey, char *svalue, uint64_t sxt) {
 		free(magicbuf);
 
                 if (read(ktsock, &errbuf, sizeof(errbuf))>0){
-                        if ((int)errbuf[0] != kt_set_magic) {
+                        if ((unsigned char)errbuf[0] != (unsigned char)kt_set_magic) {
 				return -1;
 			}
 			else {
@@ -126,7 +126,7 @@ int tycoon_set(int ktsock, char *skey, char *svalue, uint64_t sxt) {
 }
 
 int tycoon_get(unsigned char *gkey) {
-
+	uint32_t flags = 0x00;
 }
 
 int tycoon_remove(unsigned char *rkey) {
