@@ -12,6 +12,7 @@
 int intsock;
 char errbuf[5];
 char *magicbuf;
+char *readbuf;
 char buf[BUF_LEN];
 struct sockaddr_in sock_in;
 struct hostent *phe;
@@ -50,6 +51,41 @@ void tycoon_write(int ktsock,char *data) {
                 }
                 offset+=BUF_LEN;
         }
+}
+
+int tycoon_read(int ktsock) {
+	uint8_t resp_magic;
+	uint32_t hits;
+	uint16_t dbidx;
+	uint32_t ksiz;
+	uint32_t vsiz;
+	int64_t xt;
+	uint32_t magicbufsize = sizeof(resp_magic) + sizeof(hits) + sizeof(dbidx) + sizeof(ksiz) + sizeof(vsiz) + sizeof(xt);
+	offset = 0x00;
+
+	magicbuf = (char*)malloc(magicbufsize);
+        memset(magicbuf,0,magicbufsize);
+
+	read(ktsock, magicbuf, magicbufsize);
+
+	offset = sizeof(resp_magic) + sizeof(hits) + sizeof(dbidx);
+	memcpy(&ksiz,magicbuf+offset,sizeof(ksiz));
+	ksiz=ntohl(ksiz);
+	
+	offset = sizeof(resp_magic) + sizeof(hits) + sizeof(dbidx) + sizeof(ksiz);
+	memcpy(&vsiz,magicbuf+offset,sizeof(vsiz));
+	vsiz=ntohl(vsiz);
+	
+	readbuf = (char*)malloc(ksiz);
+	read(ktsock, readbuf, ksiz);
+	readbuf = realloc(readbuf, vsiz);
+	read(ktsock, readbuf, vsiz);	
+	
+	printf("Value: %s\n", readbuf);
+	printf("KSIZ: %d\n", ksiz);
+	printf("VSIZ: %d\n", vsiz);
+	free(readbuf);
+	free(magicbuf);
 }
 
 int tycoon_set(int ktsock, char *skey, char *svalue, uint64_t sxt) {
@@ -94,6 +130,7 @@ int tycoon_set(int ktsock, char *skey, char *svalue, uint64_t sxt) {
 	memcpy(magicbuf+offset,&sxt,sizeof(sxt));
 	
 	if(connect(ktsock, (struct sockaddr *)&sock_in, sizeof(sock_in)) < 0) {
+		free(magicbuf);
 		return -1;
         }
         else {
@@ -149,16 +186,14 @@ int tycoon_get(int ktsock, char *gkey) {
         memcpy(magicbuf+offset,&ksiz,sizeof(ksiz));
 
 	if(connect(ktsock, (struct sockaddr *)&sock_in, sizeof(sock_in)) < 0) {
+		free(magicbuf);
                 return -1;
         }
         else {
                 write(ktsock, magicbuf, magicbufsize);
 		tycoon_write(ktsock,gkey);
-		free(magicbuf);	
-/* ------------------
-// READ CODE =)
---------------------*/
-
+		free(magicbuf);
+		tycoon_read(ktsock);	
 	}
 }
 
@@ -194,6 +229,7 @@ int tycoon_remove(int ktsock, char *dkey) {
         memcpy(magicbuf+offset,&ksiz,sizeof(ksiz));
 
         if(connect(ktsock, (struct sockaddr *)&sock_in, sizeof(sock_in)) < 0) {
+		free(magicbuf);
                 return -1;
         }
         else {
