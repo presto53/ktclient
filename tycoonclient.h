@@ -36,6 +36,22 @@ float kt_timer_stop(char *operation) {
 	return mtime;
 }
 
+void tycoon_write(int ktsock,char *data) {
+        int k;
+        offset = 0x00;
+        for( k=0; k<(strlen(data)/BUF_LEN)+1; k++) {
+                if( strlen(data+offset) < BUF_LEN ) {
+                        memcpy(buf,data+offset,strlen(data+offset));
+                        write(ktsock, buf, strlen(data+offset));
+                }
+                else {
+                        memcpy(buf,data+offset,BUF_LEN);
+                        write(ktsock, buf, BUF_LEN);
+                }
+                offset+=BUF_LEN;
+        }
+}
+
 int tycoon_set(int ktsock, char *skey, char *svalue, uint64_t sxt) {
 	
 	uint8_t kt_set_magic = 0xB8;
@@ -139,6 +155,10 @@ int tycoon_get(int ktsock, char *gkey) {
                 write(ktsock, magicbuf, magicbufsize);
 		tycoon_write(ktsock,gkey);
 		free(magicbuf);	
+/* ------------------
+// READ CODE =)
+--------------------*/
+
 	}
 }
 
@@ -153,22 +173,6 @@ int tycoon_connect(char *thost, char *tport) {
         if(phe = gethostbyname(thost)) memcpy(&sock_in.sin_addr, phe->h_addr, phe->h_length);
         intsock = socket(AF_INET, SOCK_STREAM, 0);
 	return intsock;
-}
-
-tycoon_write(int ktsock,char *data) {
-	int k;
-        offset = 0x00;
-        for( k=0; k<(strlen(data)/BUF_LEN)+1; k++) {
-        	if( strlen(data+offset) < BUF_LEN ) {
-                	memcpy(buf,data+offset,strlen(data+offset));
-                        write(ktsock, buf, strlen(data+offset));
-                }
-                else {
-                        memcpy(buf,data+offset,BUF_LEN);
-                        write(ktsock, buf, BUF_LEN);
-                }
-                offset+=BUF_LEN;
-        }
 }
 
 int tycoon_close(int s) {
