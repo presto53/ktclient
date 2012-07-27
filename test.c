@@ -33,6 +33,7 @@ kt_timer_start();
 //tycoon_set(sock, key, value, xt);
 //tycoon_get(sock, key);
 tycoon_remove(sock, key);
+tycoon_close(sock);
 kt_timer_stop("set");
 
 /*

@@ -225,5 +225,5 @@ int tycoon_connect(char *thost, char *tport) {
 }
 
 int tycoon_close(int s) {
-
+	close(s);
 }
