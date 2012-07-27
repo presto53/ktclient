@@ -53,7 +53,7 @@ void tycoon_write(int ktsock,char *data) {
         }
 }
 
-int tycoon_read(int ktsock) {
+char* tycoon_read(int ktsock) {
 	uint8_t resp_magic;
 	uint32_t hits;
 	uint16_t dbidx;
@@ -76,16 +76,12 @@ int tycoon_read(int ktsock) {
 	memcpy(&vsiz,magicbuf+offset,sizeof(vsiz));
 	vsiz=ntohl(vsiz);
 	
-	readbuf = (char*)malloc(ksiz);
+	readbuf = (char*)realloc(readbuf, ksiz);
 	read(ktsock, readbuf, ksiz);
 	readbuf = realloc(readbuf, vsiz);
-	read(ktsock, readbuf, vsiz);	
-	
-	printf("Value: %s\n", readbuf);
-	printf("KSIZ: %d\n", ksiz);
-	printf("VSIZ: %d\n", vsiz);
-	free(readbuf);
+	read(ktsock, readbuf, vsiz);		
 	free(magicbuf);
+	return readbuf;
 }
 
 int tycoon_set(int ktsock, char *skey, char *svalue, uint64_t sxt) {
@@ -154,13 +150,15 @@ int tycoon_set(int ktsock, char *skey, char *svalue, uint64_t sxt) {
         }
 }
 
-int tycoon_get(int ktsock, char *gkey) {
+char* tycoon_get(int ktsock, char *gkey) {
 	uint8_t kt_get_magic = 0xBA;
         uint32_t flags = 0x00;
         uint32_t rnum = 0x01;
         uint16_t dbidx = 0x00;
         uint32_t ksiz = strlen(gkey);
         uint32_t magicbufsize = sizeof(kt_get_magic) + sizeof(flags) + sizeof(rnum) + sizeof(dbidx) + sizeof(ksiz);
+	char *value;
+	char *error="0x00";
         offset = 0x00;
 
         flags = htonl(flags);
@@ -187,13 +185,14 @@ int tycoon_get(int ktsock, char *gkey) {
 
 	if(connect(ktsock, (struct sockaddr *)&sock_in, sizeof(sock_in)) < 0) {
 		free(magicbuf);
-                return -1;
+                return error;
         }
         else {
                 write(ktsock, magicbuf, magicbufsize);
 		tycoon_write(ktsock,gkey);
 		free(magicbuf);
-		tycoon_read(ktsock);	
+		value = tycoon_read(ktsock);
+		return value;	
 	}
 }
 
@@ -257,9 +256,11 @@ int tycoon_connect(char *thost, char *tport) {
         sock_in.sin_port = htons((unsigned short)atoi(tport));
         if(phe = gethostbyname(thost)) memcpy(&sock_in.sin_addr, phe->h_addr, phe->h_length);
         intsock = socket(AF_INET, SOCK_STREAM, 0);
+	readbuf=malloc(BUF_LEN);
 	return intsock;
 }
 
 int tycoon_close(int s) {
+	free(readbuf);
 	close(s);
 }
