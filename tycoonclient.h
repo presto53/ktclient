@@ -8,10 +8,9 @@
 #include <netdb.h>
 
 #define BUF_LEN 8192
-#define MAX_KEY_LEN 1024
 
 int intsock;
-char errbuf[16];
+char errbuf[5];
 char *magicbuf;
 char buf[BUF_LEN];
 struct sockaddr_in sock_in;
@@ -39,6 +38,7 @@ float kt_timer_stop(char *operation) {
 void tycoon_write(int ktsock,char *data) {
         int k;
         offset = 0x00;
+	memset(buf,0,BUF_LEN);
         for( k=0; k<(strlen(data)/BUF_LEN)+1; k++) {
                 if( strlen(data+offset) < BUF_LEN ) {
                         memcpy(buf,data+offset,strlen(data+offset));
@@ -162,8 +162,57 @@ int tycoon_get(int ktsock, char *gkey) {
 	}
 }
 
-int tycoon_remove(unsigned char *rkey) {
+int tycoon_remove(int ktsock, char *dkey) {
+        uint8_t kt_del_magic = 0xB9;
+        uint32_t flags = 0x00;
+        uint32_t rnum = 0x01;
+        uint16_t dbidx = 0x00;
+        uint32_t ksiz = strlen(dkey);
+        uint32_t magicbufsize = sizeof(kt_del_magic) + sizeof(flags) + sizeof(rnum) + sizeof(dbidx) + sizeof(ksiz);
+        offset = 0x00;
 
+        flags = htonl(flags);
+        rnum = htonl(rnum);
+        dbidx = htonl(dbidx);
+        ksiz = htonl(ksiz);
+
+        magicbuf = (char*)malloc(magicbufsize);
+        memset(magicbuf,0,magicbufsize);
+
+        memcpy(magicbuf,&kt_del_magic,sizeof(kt_del_magic));
+        offset=sizeof(kt_del_magic);
+
+        memcpy(magicbuf+offset,&flags,sizeof(flags));
+        offset+=sizeof(flags);
+
+        memcpy(magicbuf+offset,&rnum,sizeof(rnum));
+        offset+=sizeof(rnum);
+
+        memcpy(magicbuf+offset,&dbidx,sizeof(dbidx));
+        offset+=sizeof(dbidx);
+
+        memcpy(magicbuf+offset,&ksiz,sizeof(ksiz));
+
+        if(connect(ktsock, (struct sockaddr *)&sock_in, sizeof(sock_in)) < 0) {
+                return -1;
+        }
+        else {
+                write(ktsock, magicbuf, magicbufsize);
+                tycoon_write(ktsock,dkey);
+                free(magicbuf);
+
+		if (read(ktsock, &errbuf, sizeof(errbuf))>0){
+                        if ((unsigned char)errbuf[0] != (unsigned char)kt_del_magic) {
+                                return -1;
+                        }
+                        else {
+                                return 0;
+                        }
+                }
+                else {
+                        return -1;
+                }
+        }
 }
 
 int tycoon_connect(char *thost, char *tport) {
