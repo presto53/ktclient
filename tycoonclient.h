@@ -79,8 +79,30 @@ char* tycoon_read(int ktsock) {
 	readbuf = (char*)realloc(readbuf, ksiz);
 	read(ktsock, readbuf, ksiz);
 	readbuf = realloc(readbuf, vsiz);
-	read(ktsock, readbuf, vsiz);		
+	printf("VSIZ: %lld\n", vsiz);
+	
+//---------------------
+	int k;
+        offset = 0x00;
+        memset(readbuf,0,vsiz);
+        for( k=0; k<(vsiz/BUF_LEN)+1; k++) {
+                if( (vsiz-offset) > BUF_LEN ) {
+//			printf("!\n");
+			read(ktsock, readbuf+offset, BUF_LEN);
+                }
+                else {
+//			printf("_");
+			read(ktsock, readbuf+offset, (vsiz-offset));
+			k++;
+                }
+                offset+=BUF_LEN;
+        }
+
+//---------------------
+
+//	read(ktsock, readbuf, vsiz);		
 	free(magicbuf);
+	printf("RESULT STRLEN: %lld\n", strlen(readbuf));
 	return readbuf;
 }
 
@@ -150,15 +172,13 @@ int tycoon_set(int ktsock, char *skey, char *svalue, uint64_t sxt) {
         }
 }
 
-char* tycoon_get(int ktsock, char *gkey) {
+int tycoon_get(int ktsock, char *gkey) {
 	uint8_t kt_get_magic = 0xBA;
         uint32_t flags = 0x00;
         uint32_t rnum = 0x01;
         uint16_t dbidx = 0x00;
         uint32_t ksiz = strlen(gkey);
         uint32_t magicbufsize = sizeof(kt_get_magic) + sizeof(flags) + sizeof(rnum) + sizeof(dbidx) + sizeof(ksiz);
-	char *value;
-	char *error="0x00";
         offset = 0x00;
 
         flags = htonl(flags);
@@ -185,14 +205,13 @@ char* tycoon_get(int ktsock, char *gkey) {
 
 	if(connect(ktsock, (struct sockaddr *)&sock_in, sizeof(sock_in)) < 0) {
 		free(magicbuf);
-                return error;
+                return -1;
         }
         else {
                 write(ktsock, magicbuf, magicbufsize);
 		tycoon_write(ktsock,gkey);
 		free(magicbuf);
-		value = tycoon_read(ktsock);
-		return value;	
+		tycoon_read(ktsock);
 	}
 }
 
