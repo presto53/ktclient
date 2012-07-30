@@ -19,8 +19,8 @@ int main(void)
 int k;
 
 /**/
-value = malloc(100*8192);
-for(k=0;k<100*8192;k++){
+value = malloc(1024*8192);
+for(k=0;k<1024*8192;k++){
 value[k]='1';
 }
 
@@ -30,7 +30,7 @@ for(k=0;k<1024*8192;k++){
 key[k]='2';
 }
 */
-/*
+//*
 sock = tycoon_connect(host, port);
 kt_timer_start();
 tycoon_set(sock, key, value, xt);
@@ -38,7 +38,7 @@ tycoon_set(sock, key, value, xt);
 //tycoon_remove(sock, key);
 tycoon_close(sock);
 kt_timer_stop("set");
-*/
+//*/
 sock = tycoon_connect(host, port);
 kt_timer_start();
 tycoon_get(sock, key);

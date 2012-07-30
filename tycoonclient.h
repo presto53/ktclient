@@ -62,11 +62,21 @@ char* tycoon_read(int ktsock) {
 	int64_t xt;
 	uint32_t magicbufsize = sizeof(resp_magic) + sizeof(hits) + sizeof(dbidx) + sizeof(ksiz) + sizeof(vsiz) + sizeof(xt);
 	offset = 0x00;
+	char *err = "0x0C";
+	int btmp;
 
 	magicbuf = (char*)malloc(magicbufsize);
         memset(magicbuf,0,magicbufsize);
 
-	read(ktsock, magicbuf, magicbufsize);
+//	read(ktsock, magicbuf, magicbufsize);
+
+	while( magicbufsize > 0 ) {
+                btmp = read(ktsock, magicbuf+offset, magicbufsize);
+                if( btmp < 0 ) return err;
+                else if ( btmp == 0 ) break;
+                magicbufsize-=btmp;
+                offset+=btmp;
+        }
 
 	offset = sizeof(resp_magic) + sizeof(hits) + sizeof(dbidx);
 	memcpy(&ksiz,magicbuf+offset,sizeof(ksiz));
@@ -77,30 +87,31 @@ char* tycoon_read(int ktsock) {
 	vsiz=ntohl(vsiz);
 	
 	readbuf = (char*)realloc(readbuf, ksiz);
-	read(ktsock, readbuf, ksiz);
+	
+//	read(ktsock, readbuf, ksiz);
+
+	offset = 0x00;
+        while( ksiz > 0 ) {
+                btmp = read(ktsock, readbuf+offset, ksiz);
+                if( btmp < 0 ) return err;
+                else if ( btmp == 0 ) break;
+                ksiz-=btmp;
+                offset+=btmp;
+        }
+
 	readbuf = realloc(readbuf, vsiz);
 	printf("VSIZ: %lld\n", vsiz);
 	
-//---------------------
-	int k;
-        offset = 0x00;
-        memset(readbuf,0,vsiz);
-        for( k=0; k<(vsiz/BUF_LEN)+1; k++) {
-                if( (vsiz-offset) > BUF_LEN ) {
-//			printf("!\n");
-			read(ktsock, readbuf+offset, BUF_LEN);
-                }
-                else {
-//			printf("_");
-			read(ktsock, readbuf+offset, (vsiz-offset));
-			k++;
-                }
-                offset+=BUF_LEN;
-        }
+	memset(readbuf,0,vsiz);
+	offset = 0x00;
+	while( vsiz > 0 ) {
+		btmp = read(ktsock, readbuf+offset, vsiz);
+		if( btmp < 0 ) return err;
+		else if ( btmp == 0 ) break;
+		vsiz-=btmp;
+		offset+=btmp;
+	}
 
-//---------------------
-
-//	read(ktsock, readbuf, vsiz);		
 	free(magicbuf);
 	printf("RESULT STRLEN: %lld\n", strlen(readbuf));
 	return readbuf;
