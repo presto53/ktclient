@@ -175,6 +175,8 @@ int tycoon_set(int ktsock, char *skey, char *svalue, uint64_t sxt) {
                         return -1;
                 }
         }
+
+	return -1;
 }
 
 /* Function to get data from KT */
@@ -278,6 +280,7 @@ int tycoon_remove(int ktsock, char *dkey) {
 
 
 /* Function to connect to KT */
+/* Return -1 if fail and socket id otherwise */
 int tycoon_connect(char *thost, char *tport) {
 	memset(&sock_in, 0, sizeof(sock_in));
         sock_in.sin_family = AF_INET;
