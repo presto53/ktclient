@@ -1,7 +1,5 @@
 /* File tycoonclient.h */
 #include <netdb.h>
-#ifndef TYCOONCLIENT_H
-#define TYCOONCLIENT_H
 #define KT_BUF_LEN 8192
 
 int intsock;
@@ -44,4 +42,3 @@ int tycoon_connect(char*, char*);
 /* Function to close connection to KT */
 void tycoon_close(int);
 
-#endif /* TYCOONCLIENT_H */
