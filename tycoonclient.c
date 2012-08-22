@@ -223,6 +223,8 @@ int tycoon_get(int ktsock, char *gkey) {
 			return -1;
 		}
 	}
+
+	return 0;
 }
 
 /* Function to remove data from KT */
