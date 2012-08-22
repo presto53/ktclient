@@ -84,7 +84,8 @@ char* tycoon_read(int ktsock) {
 	memcpy(&vsiz, ktmagicbuf + ktoffset, sizeof(vsiz));
 	vsiz=ntohl(vsiz);
 	
-	ktreadbuf = (char*)realloc(ktreadbuf, ksiz);
+	free(ktreadbuf);
+	ktreadbuf = calloc(ksiz,1);
 	
 	// read key from socket
 	ktoffset = 0x00;
@@ -97,8 +98,8 @@ char* tycoon_read(int ktsock) {
         }
 
 	// drop buf with key and realloc for value
-	ktreadbuf = realloc(ktreadbuf, vsiz);
-	memset(ktreadbuf, 0, vsiz);
+	free(ktreadbuf);
+	ktreadbuf = calloc(vsiz,1);
 
 	// get value from socket
 	ktoffset = 0x00;
