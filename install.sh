@@ -1,6 +1,6 @@
 #!/bin/sh
 
-TYCOON_LIB="libtycoon.so"
+TYCOON_LIB="libtycoonclient.so"
 TYCOON_HEADER="tycoonclient.h"
 LIB_PATH=/usr/lib
 HEADER_PATH=/usr/include
