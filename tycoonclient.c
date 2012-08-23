@@ -51,7 +51,7 @@ void tycoon_write(int ktsock, char *data) {
 
 /* Internal function to read data from KT */
 char* tycoon_read(int ktsock) {
-	uint8_t resp_magic;
+	uint8_t resp_magic = 0xBA;
 	uint32_t hits;
 	uint16_t dbidx;
 	uint32_t ksiz;
@@ -61,19 +61,37 @@ char* tycoon_read(int ktsock) {
 	ktoffset = 0x00;
 	char *err = 0;
 	int btmp;
+	uint8_t response;
 
 	ktmagicbuf = (char*)malloc(ktmagicbufsize);
         memset(ktmagicbuf, 0, ktmagicbufsize);
 
+	if(read(ktsock, ktmagicbuf + ktoffset, sizeof(resp_magic)) > 0){
+		ktmagicbufsize -= sizeof(resp_magic);
+		ktoffset += sizeof(resp_magic);
+		if ((unsigned char)ktmagicbuf[0] != (unsigned char)resp_magic) {
+			free(ktmagicbuf);
+			return err;
+		}
+	}
+	else {
+		free(ktmagicbuf);
+	        return err;
+	}
+
+
 	// read header with response magic and other information from socket
 	while( ktmagicbufsize > 0 ) {
                 btmp = read(ktsock, ktmagicbuf + ktoffset, ktmagicbufsize);
-                if( btmp < 0 ) return err;
+                if( btmp < 0 ) {
+			free(ktmagicbuf);
+			return err;
+		}
                 else if ( btmp == 0 ) break;
                 ktmagicbufsize -= btmp;
                 ktoffset += btmp;
         }
-	
+
 	// get key size
 	ktoffset = sizeof(resp_magic) + sizeof(hits) + sizeof(dbidx);
 	memcpy(&ksiz, ktmagicbuf + ktoffset, sizeof(ksiz));
@@ -91,7 +109,10 @@ char* tycoon_read(int ktsock) {
 	ktoffset = 0x00;
         while( ksiz > 0 ) {
                 btmp = read(ktsock, ktreadbuf + ktoffset, ksiz);
-                if( btmp < 0 ) return err;
+                if( btmp < 0 ) {
+			free(ktmagicbuf);
+			return err;
+		}
                 else if ( btmp == 0 ) break;
                 ksiz -= btmp;
                 ktoffset += btmp;
@@ -105,7 +126,10 @@ char* tycoon_read(int ktsock) {
 	ktoffset = 0x00;
 	while( vsiz > 0 ) {
 		btmp = read(ktsock, ktreadbuf + ktoffset, vsiz);
-		if( btmp < 0 ) return err;
+		if( btmp < 0 ) {
+			free(ktmagicbuf);
+			return err;
+		}
 		else if ( btmp == 0 ) break;
 		vsiz -= btmp;
 		ktoffset += btmp;
