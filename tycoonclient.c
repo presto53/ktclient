@@ -66,18 +66,33 @@ char* tycoon_read(int ktsock) {
 	ktmagicbuf = (char*)malloc(ktmagicbufsize);
         memset(ktmagicbuf, 0, ktmagicbufsize);
 
-	if(read(ktsock, ktmagicbuf + ktoffset, sizeof(resp_magic)) > 0){
-		ktmagicbufsize -= sizeof(resp_magic);
-		ktoffset += sizeof(resp_magic);
-		if ((unsigned char)ktmagicbuf[0] != (unsigned char)resp_magic) {
-			free(ktmagicbuf);
-			return err;
-		}
-	}
-	else {
-		free(ktmagicbuf);
-	        return err;
-	}
+	if(read(ktsock, ktmagicbuf + ktoffset, sizeof(resp_magic)) == sizeof(resp_magic)){
+                ktmagicbufsize -= sizeof(resp_magic);
+                ktoffset += sizeof(resp_magic);
+                memcpy(&response, ktmagicbuf, sizeof(resp_magic));
+                if ((unsigned char)response != (unsigned char)resp_magic) {
+                        free(ktmagicbuf);
+                        return err;
+                }
+        }
+        else {
+                free(ktmagicbuf);
+                return err;
+        }
+
+        if(read(ktsock, ktmagicbuf + ktoffset, sizeof(hits)) == sizeof(hits)){
+                ktmagicbufsize -= sizeof(hits);
+                ktoffset += sizeof(hits);
+                memcpy(&hits, ktmagicbuf, sizeof(hits));
+                if (hits <= 0) {
+                        free(ktmagicbuf);
+                        return err;
+                }
+        }
+        else {
+                free(ktmagicbuf);
+                return err;
+        }
 
 
 	// read header with response magic and other information from socket
