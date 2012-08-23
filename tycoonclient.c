@@ -81,9 +81,9 @@ char* tycoon_read(int ktsock) {
         }
 
         if(read(ktsock, ktmagicbuf + ktoffset, sizeof(hits)) == sizeof(hits)){
+                memcpy(&hits, ktmagicbuf + ktoffset, sizeof(hits));
                 ktmagicbufsize -= sizeof(hits);
                 ktoffset += sizeof(hits);
-                memcpy(&hits, ktmagicbuf, sizeof(hits));
                 if (hits <= 0) {
                         free(ktmagicbuf);
                         return err;
@@ -93,7 +93,6 @@ char* tycoon_read(int ktsock) {
                 free(ktmagicbuf);
                 return err;
         }
-
 
 	// read header with response magic and other information from socket
 	while( ktmagicbufsize > 0 ) {
